@@ -1,14 +1,19 @@
 package com.southernbox.inf.entity
 
+import io.realm.RealmObject
+import io.realm.annotations.PrimaryKey
+
 /**
  * Created by SouthernBox on 2017/2/19.
  * 内容
  */
-data class ContentDTO(
-        var id: String?,
-        var firstType: String?,
-        var secondType: String?,
-        var img: String?,
-        var name: String?,
-        var intro: String?,
-        var html: String?)
+open class ContentDTO   : RealmObject() {
+    @PrimaryKey
+    var id: String? = null
+    var firstType: String? = null
+    var secondType: String? = null
+    var img: String? = null
+    var name: String? = null
+    var intro: String? = null
+    var html: String? = null
+}

@@ -1,0 +1,148 @@
+package com.southernbox.inf.activity
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.support.v4.app.ActivityCompat
+import android.support.v4.app.ActivityOptionsCompat
+import android.support.v4.content.ContextCompat
+import android.util.TypedValue
+import android.view.KeyEvent
+import android.view.View
+import android.webkit.WebSettings
+import com.bumptech.glide.Glide
+import com.southernbox.inf.R
+import com.southernbox.inf.js.Js2Java
+import com.southernbox.inf.util.ServerAPI
+import com.southernbox.inf.util.ToastUtil
+import kotlinx.android.synthetic.main.activity_detail.*
+import retrofit2.Call
+import retrofit2.Callback
+
+/**
+ * Created SouthernBox on 2016/3/27.
+ * 详情页面
+ */
+
+@SuppressLint("SetJavaScriptEnabled")
+class DetailActivity : BaseActivity() {
+
+    private var title: String? = null
+    private var img: String? = null
+    private var html: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_detail)
+        val bundle = intent.extras
+        title = bundle.getString("title")
+        img = bundle.getString("img")
+        html = bundle.getString("html")
+        initView()
+        initData()
+    }
+
+    private fun initView() {
+        val theme = mContext!!.theme
+        val lightTextColor = TypedValue()
+        theme.resolveAttribute(R.attr.lightTextColor, lightTextColor, true)
+        collapsing_toolbar.setCollapsedTitleTextColor(ContextCompat
+                .getColor(mContext, lightTextColor.resourceId))
+        collapsing_toolbar.setExpandedTitleTextColor(ContextCompat
+                .getColorStateList(mContext, lightTextColor.resourceId))
+        web_view.getSettings().setJavaScriptEnabled(true)
+        web_view.addJavascriptInterface(Js2Java(this), "Android")
+        // 支持多窗口
+        web_view.getSettings().setSupportMultipleWindows(true)
+        // 开启 DOM storage API 功能
+        web_view.getSettings().setDomStorageEnabled(true)
+        // 开启 Application Caches 功能
+        web_view.getSettings().setAppCacheEnabled(true)
+
+        toolbar.post(Runnable {
+            //设置Toolbar的图标颜色
+            val navigationIcon = toolbar.getNavigationIcon()
+            if (navigationIcon != null) {
+                if (mDayNightHelper!!.isDay) {
+                    toolbar.getNavigationIcon()!!.setAlpha(255)
+                } else {
+                    toolbar.getNavigationIcon()!!.setAlpha(128)
+                }
+            }
+        })
+    }
+
+    private fun initData() {
+        toolbar.setTitle(title)
+
+        Glide
+                .with(this)
+                .load(ServerAPI.BASE_URL + img!!)
+                .override(480, 270)
+                .crossFade()
+                .into(image_view)
+
+        val call = requestServes!!.get(html)
+        call.enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: retrofit2.Response<String>) {
+                if (response.body() != null) {
+                    var htmlData: String = response.body().toString()
+                    if (mDayNightHelper!!.isNight) {
+                        htmlData = htmlData.replace("p {",
+                                "p {color:#9F9F9F;")
+                        htmlData = htmlData.replace("<body>", "<body bgcolor=\"#4F4F4F\">")
+                    }
+                    web_view.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT)
+                    web_view.loadDataWithBaseURL(
+                            "file:///android_asset/", htmlData, "text/html", "utf-8", null)
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                ToastUtil.show(mContext, "网络连接失败，请重试")
+                web_view.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
+            }
+        })
+
+        setSupportActionBar(toolbar)
+        val actionBar = supportActionBar
+        actionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.setNavigationOnClickListener(View.OnClickListener {
+            web_view.setVisibility(View.GONE)
+            onBackPressed()
+        })
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            web_view.setVisibility(View.GONE)
+            onBackPressed()
+        }
+        return true
+    }
+
+    companion object {
+
+        fun show(context: Context, options: ActivityOptionsCompat,
+                 title: String, img: String, html: String) {
+            val intent = Intent(context, DetailActivity::class.java)
+            val bundle = Bundle()
+            bundle.putString("title", title)
+            bundle.putString("img", img)
+            bundle.putString("html", html)
+            intent.putExtras(bundle)
+            ActivityCompat.startActivity(context, intent, options.toBundle())
+        }
+
+        fun show(context: Context, title: String?, img: String?, html: String?) {
+            val intent = Intent(context, DetailActivity::class.java)
+            val bundle = Bundle()
+            bundle.putString("title", title)
+            bundle.putString("img", img)
+            bundle.putString("html", html)
+            intent.putExtras(bundle)
+            context.startActivity(intent)
+        }
+    }
+}
