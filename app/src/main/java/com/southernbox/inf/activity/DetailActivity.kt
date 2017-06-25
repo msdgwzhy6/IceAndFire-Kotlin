@@ -83,7 +83,7 @@ class DetailActivity : BaseActivity() {
                 .crossFade()
                 .into(image_view)
 
-        val call = requestServes!!.get(html)
+        val call = requestServes!!.get(html!!)
         call.enqueue(object : Callback<String> {
             override fun onResponse(call: Call<String>, response: retrofit2.Response<String>) {
                 if (response.body() != null) {
@@ -100,7 +100,7 @@ class DetailActivity : BaseActivity() {
             }
 
             override fun onFailure(call: Call<String>, t: Throwable) {
-                ToastUtil.show(mContext, "网络连接失败，请重试")
+                ToastUtil.show(mContext!!, "网络连接失败，请重试")
                 web_view.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
             }
         })

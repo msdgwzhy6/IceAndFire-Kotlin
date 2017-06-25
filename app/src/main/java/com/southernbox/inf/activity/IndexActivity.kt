@@ -84,7 +84,7 @@ class IndexActivity : BaseActivity() {
                 val tabList = mRealm!!.where(TabDTO::class.java).findAll()
                 //有缓存数据可正常跳转，没有则提示点击重试
                 if (tabList != null) {
-                    ToastUtil.show(mContext, "网络连接失败")
+                    ToastUtil.show(mContext!!, "网络连接失败")
                     loadTabComplete = true
                     goMainPage()
                 } else {
@@ -117,7 +117,7 @@ class IndexActivity : BaseActivity() {
                 val contentList = mRealm!!.where(ContentDTO::class.java).findAll()
                 //有缓存数据可正常跳转，没有则提示点击重试
                 if (contentList != null) {
-                    ToastUtil.show(mContext, "网络连接失败")
+                    ToastUtil.show(mContext!!, "网络连接失败")
                     loadContentComplete = true
                     goMainPage()
                 } else {
@@ -136,7 +136,7 @@ class IndexActivity : BaseActivity() {
     }
 
     private fun netError() {
-        ToastUtil.show(mContext, "网络连接失败，请点击重试")
+        ToastUtil.show(mContext!!, "网络连接失败，请点击重试")
         tv_index.setOnClickListener(View.OnClickListener {
             loadTabData()
             loadContentData()

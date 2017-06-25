@@ -240,7 +240,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
             override fun onFailure(call: Call<List<ContentDTO>>, t: Throwable) {
                 app_bar.swipe_refresh_layout.setRefreshing(false)
-                ToastUtil.show(mContext, "网络连接失败")
+                ToastUtil.show(mContext!!, "网络连接失败")
             }
         })
     }
