@@ -183,7 +183,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             initFragments()
             app_bar.view_pager.setAdapter(MainFragmentPagerAdapter(
                     supportFragmentManager,
-                    fragmentList, tabList))
+                    fragmentList, tabList as List<TabDTO>))
             app_bar.tab_layout.setupWithViewPager(app_bar.view_pager)
         }
     }
