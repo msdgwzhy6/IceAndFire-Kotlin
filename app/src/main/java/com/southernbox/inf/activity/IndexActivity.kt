@@ -3,7 +3,6 @@ package com.southernbox.inf.activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
-import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Animation.AnimationListener
 import android.view.animation.AnimationUtils
@@ -22,9 +21,9 @@ import retrofit2.Callback
 
 class IndexActivity : BaseActivity() {
 
-    private var animationComplete: Boolean = false
-    private var loadTabComplete: Boolean = false
-    private var loadContentComplete: Boolean = false
+    var animationComplete = false
+    var loadTabComplete = false
+    var loadContentComplete = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,26 +64,26 @@ class IndexActivity : BaseActivity() {
      * 获取标签数据
      */
     private fun loadTabData() {
-        val call = requestServes!!.tab
+        val call = requestServes.tab
         call.enqueue(object : Callback<List<TabDTO>> {
             override fun onResponse(call: Call<List<TabDTO>>,
                                     response: retrofit2.Response<List<TabDTO>>) {
                 val tabList = response.body()
                 if (tabList != null) {
                     //缓存到数据库
-                    mRealm!!.beginTransaction()
-                    mRealm!!.copyToRealmOrUpdate(tabList)
-                    mRealm!!.commitTransaction()
+                    mRealm.beginTransaction()
+                    mRealm.copyToRealmOrUpdate(tabList)
+                    mRealm.commitTransaction()
                 }
                 loadTabComplete = true
                 goMainPage()
             }
 
             override fun onFailure(call: Call<List<TabDTO>>, t: Throwable) {
-                val tabList = mRealm!!.where(TabDTO::class.java).findAll()
+                val tabList = mRealm.where(TabDTO::class.java).findAll()
                 //有缓存数据可正常跳转，没有则提示点击重试
                 if (tabList != null) {
-                    ToastUtil.show(mContext!!, "网络连接失败")
+                    ToastUtil.show(mContext, "网络连接失败")
                     loadTabComplete = true
                     goMainPage()
                 } else {
@@ -98,26 +97,26 @@ class IndexActivity : BaseActivity() {
      * 获取内容数据
      */
     private fun loadContentData() {
-        val call = requestServes!!.content
+        val call = requestServes.content
         call.enqueue(object : Callback<List<ContentDTO>> {
             override fun onResponse(call: Call<List<ContentDTO>>,
                                     response: retrofit2.Response<List<ContentDTO>>) {
                 val contentList = response.body()
                 if (contentList != null) {
                     //缓存到数据库
-                    mRealm!!.beginTransaction()
-                    mRealm!!.copyToRealmOrUpdate(contentList)
-                    mRealm!!.commitTransaction()
+                    mRealm.beginTransaction()
+                    mRealm.copyToRealmOrUpdate(contentList)
+                    mRealm.commitTransaction()
                 }
                 loadContentComplete = true
                 goMainPage()
             }
 
             override fun onFailure(call: Call<List<ContentDTO>>, t: Throwable) {
-                val contentList = mRealm!!.where(ContentDTO::class.java).findAll()
+                val contentList = mRealm.where(ContentDTO::class.java).findAll()
                 //有缓存数据可正常跳转，没有则提示点击重试
                 if (contentList != null) {
-                    ToastUtil.show(mContext!!, "网络连接失败")
+                    ToastUtil.show(mContext, "网络连接失败")
                     loadContentComplete = true
                     goMainPage()
                 } else {
@@ -136,11 +135,11 @@ class IndexActivity : BaseActivity() {
     }
 
     private fun netError() {
-        ToastUtil.show(mContext!!, "网络连接失败，请点击重试")
-        tv_index.setOnClickListener(View.OnClickListener {
+        ToastUtil.show(mContext, "网络连接失败，请点击重试")
+        tv_index.setOnClickListener({
             loadTabData()
             loadContentData()
-            tv_index.setClickable(false)
+            tv_index.isClickable = false
         })
     }
 

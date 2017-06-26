@@ -28,9 +28,9 @@ import retrofit2.Callback
 @SuppressLint("SetJavaScriptEnabled")
 class DetailActivity : BaseActivity() {
 
-    private var title: String? = null
-    private var img: String? = null
-    private var html: String? = null
+    lateinit var title: String
+    lateinit var img: String
+    lateinit var html: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,79 +44,79 @@ class DetailActivity : BaseActivity() {
     }
 
     private fun initView() {
-        val theme = mContext!!.theme
+        val theme = mContext.theme
         val lightTextColor = TypedValue()
         theme.resolveAttribute(R.attr.lightTextColor, lightTextColor, true)
         collapsing_toolbar.setCollapsedTitleTextColor(ContextCompat
                 .getColor(mContext, lightTextColor.resourceId))
         collapsing_toolbar.setExpandedTitleTextColor(ContextCompat
                 .getColorStateList(mContext, lightTextColor.resourceId))
-        web_view.getSettings().setJavaScriptEnabled(true)
+        web_view.settings.javaScriptEnabled = true
         web_view.addJavascriptInterface(Js2Java(this), "Android")
         // 支持多窗口
-        web_view.getSettings().setSupportMultipleWindows(true)
+        web_view.settings.setSupportMultipleWindows(true)
         // 开启 DOM storage API 功能
-        web_view.getSettings().setDomStorageEnabled(true)
+        web_view.settings.domStorageEnabled = true
         // 开启 Application Caches 功能
-        web_view.getSettings().setAppCacheEnabled(true)
+        web_view.settings.setAppCacheEnabled(true)
 
-        toolbar.post(Runnable {
+        toolbar.post({
             //设置Toolbar的图标颜色
-            val navigationIcon = toolbar.getNavigationIcon()
+            val navigationIcon = toolbar.navigationIcon
             if (navigationIcon != null) {
-                if (mDayNightHelper!!.isDay) {
-                    toolbar.getNavigationIcon()!!.setAlpha(255)
+                if (mDayNightHelper.isDay) {
+                    navigationIcon.alpha = 255
                 } else {
-                    toolbar.getNavigationIcon()!!.setAlpha(128)
+                    navigationIcon.alpha = 128
                 }
             }
         })
     }
 
     private fun initData() {
-        toolbar.setTitle(title)
+        toolbar.title = title
 
         Glide
                 .with(this)
-                .load(ServerAPI.BASE_URL + img!!)
+                .load(ServerAPI.BASE_URL + img)
                 .override(480, 270)
                 .crossFade()
                 .into(image_view)
 
-        val call = requestServes!!.get(html!!)
+        val call = requestServes[html]
         call.enqueue(object : Callback<String> {
             override fun onResponse(call: Call<String>, response: retrofit2.Response<String>) {
                 if (response.body() != null) {
                     var htmlData: String = response.body().toString()
-                    if (mDayNightHelper!!.isNight) {
+                    if (mDayNightHelper.isNight) {
                         htmlData = htmlData.replace("p {",
                                 "p {color:#9F9F9F;")
                         htmlData = htmlData.replace("<body>", "<body bgcolor=\"#4F4F4F\">")
                     }
-                    web_view.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT)
+                    web_view.settings.cacheMode = WebSettings.LOAD_DEFAULT
                     web_view.loadDataWithBaseURL(
                             "file:///android_asset/", htmlData, "text/html", "utf-8", null)
                 }
             }
 
             override fun onFailure(call: Call<String>, t: Throwable) {
-                ToastUtil.show(mContext!!, "网络连接失败，请重试")
-                web_view.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
+                ToastUtil.show(mContext, "网络连接失败，请重试")
+                web_view.settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
             }
         })
 
         setSupportActionBar(toolbar)
         val actionBar = supportActionBar
         actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener(View.OnClickListener {
-            web_view.setVisibility(View.GONE)
+        toolbar.setNavigationOnClickListener({
+            web_view.visibility = View.GONE
             onBackPressed()
         })
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            web_view.setVisibility(View.GONE)
+            web_view.visibility = View.GONE
             onBackPressed()
         }
         return true

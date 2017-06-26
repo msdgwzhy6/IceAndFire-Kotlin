@@ -57,9 +57,9 @@ class MainFragment : Fragment() {
     }
 
     private fun initView() {
-        recycler_view.setLayoutManager(LinearLayoutManager(mContext))
+        recycler_view.layoutManager = LinearLayoutManager(mContext)
         adapter = MainAdapter(activity, contentList)
-        recycler_view.setAdapter(adapter)
+        recycler_view.adapter = adapter
     }
 
     /**
@@ -94,7 +94,7 @@ class MainFragment : Fragment() {
             //更新背景颜色
             fl_content.setBackgroundResource(pagerBackground.resourceId)
             //更新Item的背景及字体颜色
-            val childCount = recycler_view.getChildCount()
+            val childCount = recycler_view.childCount
             for (position in 0..childCount - 1) {
                 val item = recycler_view.getChildAt(position)
                 item.ll_content.setBackgroundResource(colorBackground.resourceId)
@@ -112,7 +112,7 @@ class MainFragment : Fragment() {
                         .getDeclaredMethod("clear")
                 declaredMethod.isAccessible = true
                 declaredMethod.invoke(declaredField.get(recycler_view))
-                val recycledViewPool = recycler_view.getRecycledViewPool()
+                val recycledViewPool = recycler_view.recycledViewPool
                 recycledViewPool.clear()
             } catch (e: Exception) {
                 e.printStackTrace()

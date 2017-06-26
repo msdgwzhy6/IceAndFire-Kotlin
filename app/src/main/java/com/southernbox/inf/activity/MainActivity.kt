@@ -25,7 +25,6 @@ import com.southernbox.inf.util.DayNightHelper
 import com.southernbox.inf.util.RequestServes
 import com.southernbox.inf.util.ServerAPI
 import com.southernbox.inf.util.ToastUtil
-import com.southernbox.inf.widget.MaterialSearchView.MaterialSearchView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.view.*
 import kotlinx.android.synthetic.main.nav_header_main.view.*
@@ -41,10 +40,11 @@ import java.util.*
  */
 
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
-    private var tabList: List<TabDTO>? = null
-    private val fragmentList = ArrayList<MainFragment>()
 
-    private var switchCompat: SwitchCompat? = null
+    lateinit var tabList: List<TabDTO>
+    val fragmentList = ArrayList<MainFragment>()
+
+    lateinit var switchCompat: SwitchCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,9 +64,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val actionBar = supportActionBar
         actionBar?.setDisplayHomeAsUpEnabled(true)
 
-        app_bar.main_toolbar.post(Runnable {
+        app_bar.main_toolbar.post({
             //设置Toolbar的标题及图标颜色
-            app_bar.main_toolbar.setTitle(resources.getString(R.string.person))
+            app_bar.main_toolbar.title = resources.getString(R.string.person)
             refreshToolbarIcon()
         })
 
@@ -74,23 +74,23 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         search_view.setEllipsize(true)
         search_view.setHint("搜索")
         //设置搜索结果提示
-        val contentList = mRealm!!.where(ContentDTO::class.java).findAll()
+        val contentList = mRealm.where(ContentDTO::class.java).findAll()
         val contentNames = arrayOfNulls<String>(contentList.size)
         for (i in contentList.indices) {
             contentNames[i] = contentList[i].name
         }
         search_view.setSuggestions(contentNames)
         //监听搜索结果点击事件
-        search_view.setOnSuggestionClickListener(MaterialSearchView.OnSuggestionClickListener { name ->
+        search_view.setOnSuggestionClickListener({ name ->
             //延时以展示水波纹效果
-            search_view.postDelayed(Runnable {
+            search_view.postDelayed({
                 search_view.closeSearch()
-                val content = mRealm!!.where(ContentDTO::class.java)
+                val content = mRealm.where(ContentDTO::class.java)
                         .equalTo("name", name)
                         .findFirst()
                 if (content != null) {
                     DetailActivity.show(
-                            mContext!!,
+                            mContext,
                             content.name,
                             content.img,
                             content.html)
@@ -120,31 +120,27 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         navigation_view.setNavigationItemSelectedListener(this)
 
         val navigationHeader = navigation_view.getHeaderView(0)
-        if (mDayNightHelper!!.isDay) {
+        if (mDayNightHelper.isDay) {
             navigationHeader.setBackgroundResource(R.drawable.side_nav_bar_day)
         } else {
             navigationHeader.setBackgroundResource(R.drawable.side_nav_bar_night)
         }
 
-        val menu = navigation_view.getMenu()
+        val menu = navigation_view.menu
         val nightItem = menu.findItem(R.id.nav_night)
         val nightView = MenuItemCompat.getActionView(nightItem)
         switchCompat = nightView.findViewById(R.id.switch_compat) as SwitchCompat
         //设置夜间模式开关
-        if (mDayNightHelper!!.isDay) {
-            switchCompat!!.isChecked = false
-        } else {
-            switchCompat!!.isChecked = true
-        }
+        switchCompat.isChecked = !mDayNightHelper.isDay
         //监听夜间模式点击事件
-        switchCompat!!.setOnCheckedChangeListener { _, b ->
+        switchCompat.setOnCheckedChangeListener { _, b ->
             showAnimation()
             if (b) {
-                mDayNightHelper!!.setMode(DayNightHelper.DayNight.NIGHT)
+                mDayNightHelper.setMode(DayNightHelper.DayNight.NIGHT)
                 setTheme(R.style.NightTheme)
                 refreshUI(false)
             } else {
-                mDayNightHelper!!.setMode(DayNightHelper.DayNight.DAY)
+                mDayNightHelper.setMode(DayNightHelper.DayNight.DAY)
                 setTheme(R.style.DayTheme)
                 refreshUI(true)
             }
@@ -166,24 +162,24 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
      * @param firstType 要展示的类型
      */
     private fun initViewPager(firstType: String) {
-        tabList = mRealm!!.where(TabDTO::class.java)
+        tabList = mRealm.where(TabDTO::class.java)
                 .equalTo("firstType", firstType)
                 .findAll()
-        if (tabList != null && tabList!!.size > 0) {
+        if (tabList.isNotEmpty()) {
             //滑动时禁用SwipeRefreshLayout
-            app_bar.view_pager.setOnTouchListener(View.OnTouchListener { _, motionEvent ->
+            app_bar.view_pager.setOnTouchListener({ _, motionEvent ->
                 val action = motionEvent.action
                 when (action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> app_bar.swipe_refresh_layout.setEnabled(false)
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> app_bar.swipe_refresh_layout.setEnabled(true)
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> app_bar.swipe_refresh_layout.isEnabled = false
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> app_bar.swipe_refresh_layout.isEnabled = true
                 }
                 false
             })
 
             initFragments()
-            app_bar.view_pager.setAdapter(MainFragmentPagerAdapter(
+            app_bar.view_pager.adapter = MainFragmentPagerAdapter(
                     supportFragmentManager,
-                    fragmentList, tabList as List<TabDTO>))
+                    fragmentList, tabList)
             app_bar.tab_layout.setupWithViewPager(app_bar.view_pager)
         }
     }
@@ -193,19 +189,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
      */
     private fun initFragments() {
         fragmentList.clear()
-//        for ((_, firstType, secondType) in tabList!!) {
-//            val fragment = MainFragment
-//                    .newInstance(firstType, secondType)
-//            fragmentList.add(fragment)
-//        }
-//        for (tab in tabList!!) {
-//            val fragment = MainFragment
-//                    .newInstance(tab.firstType, tab.secondType)
-//            fragmentList.add(fragment)
-//        }
-        tabList!!.mapTo(fragmentList) {
-            MainFragment
-                    .newInstance(it.firstType, it.secondType)
+        tabList.mapTo(fragmentList) {
+            MainFragment.newInstance(it.firstType, it.secondType)
         }
     }
 
@@ -223,24 +208,20 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         call.enqueue(object : Callback<List<ContentDTO>> {
             override fun onResponse(call: Call<List<ContentDTO>>,
                                     response: retrofit2.Response<List<ContentDTO>>) {
-                app_bar.swipe_refresh_layout.setRefreshing(false)
+                app_bar.swipe_refresh_layout.isRefreshing = false
                 val list = response.body()
                 if (list != null) {
                     //缓存到数据库
-                    mRealm!!.beginTransaction()
-                    mRealm!!.copyToRealmOrUpdate(list)
-                    mRealm!!.commitTransaction()
+                    mRealm.beginTransaction()
+                    mRealm.copyToRealmOrUpdate(list)
+                    mRealm.commitTransaction()
                 }
-                for (fragment in fragmentList) {
-                    if (fragment.isAdded) {
-                        fragment.showData()
-                    }
-                }
+                fragmentList.filter { it.isAdded }.forEach { it.showData() }
             }
 
             override fun onFailure(call: Call<List<ContentDTO>>, t: Throwable) {
-                app_bar.swipe_refresh_layout.setRefreshing(false)
-                ToastUtil.show(mContext!!, "网络连接失败")
+                app_bar.swipe_refresh_layout.isRefreshing = false
+                ToastUtil.show(mContext, "网络连接失败")
             }
         })
     }
@@ -331,10 +312,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         //更新侧滑菜单背景
         navigation_view.setBackgroundResource(colorBackground.resourceId)
         //更新侧滑菜单字体颜色
-        navigation_view.setItemTextColor(
-                ContextCompat.getColorStateList(mContext, darkTextColor.resourceId))
-        navigation_view.setItemIconTintList(
-                ContextCompat.getColorStateList(mContext, darkTextColor.resourceId))
+        navigation_view.itemTextColor = ContextCompat.getColorStateList(mContext, darkTextColor.resourceId)
+        navigation_view.itemIconTintList = ContextCompat.getColorStateList(mContext, darkTextColor.resourceId)
         //更新ViewPagerUI
         for (fragment in fragmentList) {
             fragment.refreshUI()
@@ -359,21 +338,21 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
      * 刷新Toolbar图标
      */
     private fun refreshToolbarIcon() {
-        val navigationIcon = app_bar.main_toolbar.getNavigationIcon()
+        val navigationIcon = app_bar.main_toolbar.navigationIcon
         if (navigationIcon != null) {
-            if (mDayNightHelper!!.isDay) {
-                navigationIcon.setAlpha(255)
+            if (mDayNightHelper.isDay) {
+                navigationIcon.alpha = 255
             } else {
-                navigationIcon.setAlpha(128)
+                navigationIcon.alpha = 128
             }
         }
-        val toolbarMenu = app_bar.main_toolbar.getMenu()
-        val searchIcon = toolbarMenu.getItem(0).getIcon()
+        val toolbarMenu = app_bar.main_toolbar.menu
+        val searchIcon = toolbarMenu.getItem(0).icon
         if (searchIcon != null) {
-            if (mDayNightHelper!!.isDay) {
-                searchIcon.setAlpha(255)
+            if (mDayNightHelper.isDay) {
+                searchIcon.alpha = 255
             } else {
-                searchIcon.setAlpha(128)
+                searchIcon.alpha = 128
             }
         }
     }
@@ -383,7 +362,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     override fun onBackPressed() {
         if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
             drawer_layout.closeDrawer(GravityCompat.START)
-        } else if (search_view.isSearchOpen()) {
+        } else if (search_view.isSearchOpen) {
             search_view.closeSearch()
         } else if (System.currentTimeMillis() - mExitTime > 2000) {
             ToastUtil.show(this, "再按一次退出")
@@ -412,7 +391,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 if (TYPE_PERSON != currentFirstType) {
                     currentFirstType = TYPE_PERSON
                     initViewPager(currentFirstType)
-                    app_bar.main_toolbar.setTitle(resources.getString(R.string.person))
+                    app_bar.main_toolbar.title = resources.getString(R.string.person)
                 }
                 drawer_layout.closeDrawer(GravityCompat.START)
             }
@@ -420,7 +399,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 if (TYPE_HOUSE != currentFirstType) {
                     currentFirstType = TYPE_HOUSE
                     initViewPager(currentFirstType)
-                    app_bar.main_toolbar.setTitle(resources.getString(R.string.house))
+                    app_bar.main_toolbar.title = resources.getString(R.string.house)
                 }
                 drawer_layout.closeDrawer(GravityCompat.START)
             }
@@ -428,7 +407,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 if (TYPE_HISTORY != currentFirstType) {
                     currentFirstType = TYPE_HISTORY
                     initViewPager(currentFirstType)
-                    app_bar.main_toolbar.setTitle(resources.getString(R.string.history))
+                    app_bar.main_toolbar.title = resources.getString(R.string.history)
                 }
                 drawer_layout.closeDrawer(GravityCompat.START)
             }
@@ -436,24 +415,19 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 if (TYPE_CASTLE != currentFirstType) {
                     currentFirstType = TYPE_CASTLE
                     initViewPager(currentFirstType)
-                    app_bar.main_toolbar.setTitle(resources.getString(R.string.castle))
+                    app_bar.main_toolbar.title = resources.getString(R.string.castle)
                 }
                 drawer_layout.closeDrawer(GravityCompat.START)
             }
             R.id.nav_night -> {
-                val isChecked = switchCompat!!.isChecked
-                if (isChecked) {
-                    switchCompat!!.isChecked = false
-                } else {
-                    switchCompat!!.isChecked = true
-                }
+                val isChecked = switchCompat.isChecked
+                switchCompat.isChecked = !isChecked
             }
         }
         return true
     }
 
     companion object {
-
         private val TYPE_PERSON = "person"
         private val TYPE_HOUSE = "house"
         private val TYPE_HISTORY = "history"

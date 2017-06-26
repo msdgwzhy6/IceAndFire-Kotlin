@@ -22,10 +22,10 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 open class BaseActivity : AppCompatActivity() {
 
-    var mContext: Context? = null
-    var mDayNightHelper: DayNightHelper? = null
-    var mRealm: Realm? = null
-    var requestServes: RequestServes? = null
+    lateinit var mContext: Context
+    lateinit var mDayNightHelper: DayNightHelper
+    lateinit var mRealm: Realm
+    lateinit var requestServes: RequestServes
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,7 +33,7 @@ open class BaseActivity : AppCompatActivity() {
 
         //设置主题
         mDayNightHelper = DayNightHelper(this)
-        if (mDayNightHelper!!.isDay) {
+        if (mDayNightHelper.isDay) {
             setTheme(R.style.DayTheme)
         } else {
             setTheme(R.style.NightTheme)
